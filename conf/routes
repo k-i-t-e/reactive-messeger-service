@@ -1,0 +1,19 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Home page
+GET     /                           controllers.Application.index
+
+# Messages
+POST     /api/messages              controllers.Messages.submit
+GET      /api/messages/:name          controllers.Messages.get(name: String)
+
+# Chats
+POST    /api/chat/:name             controllers.Chat.join(name: String)
+DELETE  /api/chat/:name             controllers.Chat.leave(name: String)
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.at(path="/public", file)
+
+    
