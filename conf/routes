@@ -10,8 +10,8 @@ POST     /api/messages              controllers.Messages.submit
 GET      /api/messages/:name          controllers.Messages.get(name: String)
 
 # Chats
-POST    /api/chat/:name             controllers.Chat.join(name: String)
-DELETE  /api/chat/:name             controllers.Chat.leave(name: String)
+GET    /api/chat/:name             controllers.ChatController.join(name: String)
+DELETE  /api/chat/:name             controllers.ChatController.leave(name: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
