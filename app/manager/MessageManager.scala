@@ -11,7 +11,7 @@ import repository.MessageRepository
   */
 @Singleton
 class MessageManager @Inject() (repository: MessageRepository) {
-  def getMessages(name: String): Vector[Message] = repository.loadMessagesFor(name).map(dto => Message(dto.text, dto.sender))
+  def getMessages(name: String): Vector[Message] = repository.loadMessagesFor(name).map(dto => Message(dto.sender, dto.text))
 
   def saveMessage(message: Message): Message =  {
     repository.saveMessage(new MessageDto(message.text, message.sender))

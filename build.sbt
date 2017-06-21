@@ -9,7 +9,7 @@ scalaVersion := "2.11.7"
 val reactiveMongoVer = "0.11.14"
 
 libraryDependencies ++= Seq( jdbc , cache , ws   , specs2 % Test,
-  javaJpa,
+  javaJpa, filters,
   "org.hibernate" % "hibernate-entitymanager" % "5.1.0.Final")
 
 libraryDependencies += "org.postgresql" % "postgresql" % "42.1.1"
