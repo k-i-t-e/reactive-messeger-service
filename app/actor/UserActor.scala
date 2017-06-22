@@ -1,7 +1,7 @@
 package actor
 
 import akka.actor.{Actor, ActorRef, Props}
-import model.Message
+import model.{IncomingMessage, Message}
 
 /**
   * Created by Mikhail_Miroliubov on 6/2/2017.
@@ -10,10 +10,10 @@ class UserActor(out: ActorRef, chatRoom: ActorRef, persistActor: ActorRef, name:
   chatRoom ! Join(name)
 
   override def receive: Receive = {
-    case msg: String =>
-      chatRoom ! Message(name, msg)
-      persistActor ! Message(name, msg)
-    case msg: Message => out ! (msg.sender + ": " + msg.text)
+    case msg: IncomingMessage =>
+      chatRoom ! Message(name, msg.text)
+      persistActor ! Message(name, msg.text)
+    case msg: Message => out ! msg
   }
 
   override def postStop() = chatRoom ! Leave(name)

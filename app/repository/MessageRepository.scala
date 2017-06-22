@@ -22,7 +22,7 @@ class MessageRepository {
   def loadMessagesFor(sender: String) = {
     doTransactional(
       () => entityManager.createNamedQuery("Message.getAllForSender", classOf[MessageDto])
-        .setParameter("sender", sender).getResultList
+        .getResultList //.setParameter("sender", sender)
     ).asScala.toVector
   }
 
