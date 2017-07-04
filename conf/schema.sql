@@ -4,4 +4,6 @@ CREATE TABLE message (
   message_id BIGINT NOT NULL PRIMARY KEY,
   sender VARCHAR(100) NOT NULL,
   content TEXT NOT NULL
-)
+);
+
+ALTER TABLE message ADD COLUMN address VARCHAR(100);
