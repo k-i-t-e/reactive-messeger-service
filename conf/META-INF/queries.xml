@@ -2,7 +2,13 @@
 <entity-mappings version="1.0" xmlns="http://java.sun.com/xml/ns/persistence/orm"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://java.sun.com/xml/ns/persistence/orm http://java.sun.com/xml/ns/persistence/orm_1_0.xsd">
-    <named-native-query name="Message.getAllForSender" result-class="model.dto.MessageDto">
-        <query>SELECT message_id, sender, content FROM message</query>
+    <named-native-query name="Message.getGlobalMessages" result-class="model.dto.MessageDto">
+        <query>SELECT message_id, sender, content, address FROM message WHERE address IS NULL</query>
+    </named-native-query>
+    <named-native-query name="Message.getPrivateMessages" result-class="model.dto.MessageDto">
+        <query>
+            SELECT message_id, sender, content, address
+            FROM message WHERE (sender = ?2 AND address = ?1) OR (sender = ?1 AND address = ?2)
+        </query>
     </named-native-query>
 </entity-mappings>

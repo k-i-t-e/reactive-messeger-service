@@ -8,7 +8,7 @@ import javax.persistence._
   */
 @Entity
 @Table(name = "message")
-class MessageDto(_text: String, _sender:String) {
+class MessageDto(_text: String, _sender:String, _address: String) {
 
   @Id
   @Column(name = "message_id")
@@ -22,5 +22,8 @@ class MessageDto(_text: String, _sender:String) {
   @Column(name = "sender")
   var sender: String = _sender
 
-  def this() = this(null, null)
+  @Column(name = "address")
+  var address: String = _address
+
+  def this() = this(null, null, null)
 }

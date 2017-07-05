@@ -19,12 +19,14 @@ class Messages @Inject() (messageManager: MessageManager) extends Controller {
 
   implicit val messageReads: Reads[Message] = (
     (JsPath \ "sender").read[String] and
-      (JsPath \ "text").read[String]
+      (JsPath \ "text").read[String] and
+      (JsPath \ "address").read[String]
     )(Message.apply _)
 
   implicit val messageWrites: Writes[Message] = (
     (JsPath \ "sender").write[String] and
-      (JsPath \ "text").write[String]
+      (JsPath \ "text").write[String] and
+      (JsPath \ "address").write[String]
     )(unlift(Message.unapply))
 
   def submit = Action.async(BodyParsers.parse.json) { request =>
@@ -37,5 +39,9 @@ class Messages @Inject() (messageManager: MessageManager) extends Controller {
 
   def get(name: String) = Action.async {
     implicit request => Future(Ok(Json.toJson(messageManager.getMessages(name))))
+  }
+
+  def getPrivate(sender: String, address: String) = Action.async {
+    implicit request => Future(Ok(Json.toJson(messageManager.getPrivateMessages(sender, address))))
   }
 }

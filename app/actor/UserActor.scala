@@ -17,22 +17,20 @@ class UserActor(out: ActorRef, chatRoom: ActorRef, persistActor: ActorRef, name:
   chatRoom ! Join(name)
   log.info("ACTOR PATH:" + self.path)
 
-
-
   override def receive: Receive = {
     case msg: JsValue =>
       val res: JsResult[IncomingMessage] = msg.validate(UserActor.messageReads)
       val message = res.get
 
       if (message.address != null) {
-        context.actorSelection("user/" + message.address) ! msg
+        context.actorSelection("akka://application/user/" + message.address) ! Message(name, message.text, message.address)
         log.info("Transfer message to " + message.address)
       } else {
         chatRoom ! Message(name, message.text)
         log.info("Transfer message to chatroom")
       }
 
-      persistActor ! Message(name, message.text)
+      persistActor ! Message(name, message.text, message.address)
     case msg: Message => out ! msg
   }
 

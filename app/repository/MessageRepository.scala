@@ -19,10 +19,19 @@ class MessageRepository {
     doTransactional(() => entityManager.persist(messageDto))
   }
 
-  def loadMessagesFor(sender: String) = {
+  def loadGlobalMessages(sender: String) = {
     doTransactional(
-      () => entityManager.createNamedQuery("Message.getAllForSender", classOf[MessageDto])
+      () => entityManager.createNamedQuery("Message.getGlobalMessages", classOf[MessageDto])
         .getResultList //.setParameter("sender", sender)
+    ).asScala.toVector
+  }
+
+  def loadPrivateMessages(sender: String, address: String) = {
+    doTransactional(
+      () => entityManager.createNamedQuery("Message.getPrivateMessages", classOf[MessageDto])
+        .setParameter(1, sender)
+        .setParameter(2, address)
+        .getResultList
     ).asScala.toVector
   }
 
