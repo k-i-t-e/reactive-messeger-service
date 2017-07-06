@@ -37,11 +37,15 @@ class Messages @Inject() (messageManager: MessageManager) extends Controller {
     ))
   }
 
-  def get(name: String) = Action.async {
-    implicit request => Future(Ok(Json.toJson(messageManager.getMessages(name))))
+  def get() = Action.async {
+    implicit request => Future(Ok(Json.toJson(messageManager.getMessages())))
   }
 
   def getPrivate(sender: String, address: String) = Action.async {
     implicit request => Future(Ok(Json.toJson(messageManager.getPrivateMessages(sender, address))))
+  }
+
+  def getLast(user: String) = Action.async {
+    implicit request => Future(Ok(Json.toJson(messageManager.getLastMessages(user))))
   }
 }

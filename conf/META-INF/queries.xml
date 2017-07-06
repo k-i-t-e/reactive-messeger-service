@@ -11,4 +11,36 @@
             FROM message WHERE (sender = ?2 AND address = ?1) OR (sender = ?1 AND address = ?2)
         </query>
     </named-native-query>
+    <named-native-query name="Message.getLastMessages" result-class="model.dto.MessageDto">
+        <query>
+            WITH summary AS (
+                SELECT
+                    m.address,
+                    m.sender,
+                    m.content,
+                    m.message_id,
+                    ROW_NUMBER()
+                    OVER (
+                        PARTITION BY GREATEST(m.sender, m.address)
+                        ORDER BY m.message_id DESC ) AS rk
+                FROM message m
+                WHERE m.address IS NOT NULL AND (m.address = ?1 OR m.sender = ?1))
+            SELECT s.address,
+                s.sender,
+                s.content,
+                s.message_id
+            FROM summary s
+            WHERE s.rk = 1
+        </query>
+    </named-native-query>
+    <!--
+     SELECT DISTINCT ON (GREATEST(sender, address))
+       address,
+           sender,
+           content,
+    message_id
+FROM   message
+WHERE address IS NOT NULL
+ORDER  BY GREATEST(sender, address), message_id DESC;
+    -->
 </entity-mappings>

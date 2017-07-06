@@ -7,7 +7,8 @@ GET     /                           controllers.Application.index
 
 # Messages
 POST     /api/messages              controllers.Messages.submit
-GET      /api/messages/:name          controllers.Messages.get(name: String)
+GET      /api/messages/             controllers.Messages.get()
+GET      /api/chats/:user        controllers.Messages.getLast(user: String)
 GET      /api/messages/:sender/:address          controllers.Messages.getPrivate(sender: String, address: String)
 
 # Chats
