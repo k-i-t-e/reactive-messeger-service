@@ -1,58 +1,48 @@
 package repository
 
-import javax.inject.Singleton
+import java.util.function.Function
+import javax.inject.{Inject, Singleton}
 import javax.persistence.{EntityManager, EntityManagerFactory, Persistence}
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
 import model.dto.MessageDto
+import play.db.jpa.{JPAApi, Transactional}
+import util.FunctionUtils
 
 /**
   * Created by Mikhail_Miroliubov on 6/2/2017.
   */
 @Singleton
-class MessageRepository {
+class MessageRepository @Inject() (jpaApi : JPAApi) {
 
   val entityManagerFactory: EntityManagerFactory = Persistence.createEntityManagerFactory("defaultPersistenceUnit")
   val entityManager: EntityManager = entityManagerFactory.createEntityManager()
 
   def saveMessage(messageDto: MessageDto) = {
-    doTransactional(() => entityManager.persist(messageDto))
+    jpaApi.withTransaction(FunctionUtils.toJavaFunction(
+      (entityManager: EntityManager) => entityManager.persist(messageDto)))
   }
 
+  @Transactional
   def loadGlobalMessages() = {
-    doTransactional(
-      () => entityManager.createNamedQuery("Message.getGlobalMessages", classOf[MessageDto])
-        .getResultList
-    ).asScala.toVector
+      entityManager.createNamedQuery("Message.getGlobalMessages", classOf[MessageDto])
+        .getResultList.asScala.toVector
   }
 
+  @Transactional
   def loadPrivateMessages(sender: String, address: String) = {
-    doTransactional(
-      () => entityManager.createNamedQuery("Message.getPrivateMessages", classOf[MessageDto])
-        .setParameter(1, sender)
-        .setParameter(2, address)
-        .getResultList
-    ).asScala.toVector
+    entityManager.createNamedQuery("Message.getPrivateMessages", classOf[MessageDto])
+      .setParameter(1, sender)
+      .setParameter(2, address)
+      .getResultList
+      .asScala.toVector
   }
 
+  @Transactional
   def loadLastMessages(user: String) = {
-    doTransactional(
-      () => entityManager.createNamedQuery("Message.getLastMessages", classOf[MessageDto])
-        .setParameter(1, user)
-        .getResultList
-    ).asScala
-  }
-
-  private def doTransactional[T](f: () => T) = {
-    entityManager.getTransaction.begin()
-    try {
-      val res = f.apply
-      entityManager.getTransaction.commit()
-      res
-    } catch {
-      case e: Throwable =>
-        entityManager.getTransaction.rollback()
-        throw e
-    }
+    entityManager.createNamedQuery("Message.getLastMessages", classOf[MessageDto])
+      .setParameter(1, user)
+      .getResultList
+      .asScala
   }
 }
