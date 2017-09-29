@@ -4,10 +4,8 @@ import javax.inject.{Inject, Singleton}
 
 import model.Message
 import reactivemongo.api.collections.bson.BSONCollection
-import reactivemongo.bson.BSONNull
-
+import reactivemongo.bson.{BSONDocumentReader, BSONDocumentWriter, BSONNull, BSONString, Macros, document}
 import play.modules.reactivemongo.ReactiveMongoApi
-import reactivemongo.bson.{BSONDocumentReader, BSONDocumentWriter, Macros, document}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -33,8 +31,19 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
   def loadPrivateMessages(from: String, to: String) = {
     messages.flatMap(_.find(document("to" -> to, "from" -> from)).cursor[Message]().collect[List]())
   }
-
+   // db.messages.aggregate([{$match:{from:"kite"}}, {$group:{_id:{from:"$from", to:"$to"}, last_msg:{$last:"$text"}}}])
   /*def loadLastMessages(user: String) = {
-    messages.flatMap(_.find(document()))
+    //messages.flatMap(_.aggregate(document("$group" -> document("_id" -> document(), "last_msg" -> document()))))
+    messages.flatMap(_ => perform(_, user))
+    def perform(col: BSONCollection, from: String) = {
+      import col.BatchCommands.AggregationFramework.{
+        AggregationResult, Group, Match, LastField
+      }
+
+      col.aggregate(
+        Match(document("from" -> from)),
+        List(Group(document("from" -> "$from", "to" -> "$to"))("last_msg" -> LastField("$text")))
+      ).map(_.head[])
+    }
   }*/
 }
