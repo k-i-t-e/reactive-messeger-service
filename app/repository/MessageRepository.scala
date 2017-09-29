@@ -2,7 +2,7 @@ package repository
 
 import javax.inject.{Inject, Singleton}
 
-import model.Message
+import model.{Dialog, Message}
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.bson.{BSONDocumentReader, BSONDocumentWriter, BSONNull, BSONString, Macros, document}
 import play.modules.reactivemongo.ReactiveMongoApi
@@ -17,8 +17,9 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
   val db = reactiveMongoApi.database
   def messages = db.map(_.collection[BSONCollection]("messages"))
 
-  implicit def personWriter: BSONDocumentWriter[Message] = Macros.writer[Message]
-  implicit def personReader: BSONDocumentReader[Message] = Macros.reader[Message]
+  implicit def messageWriter: BSONDocumentWriter[Message] = Macros.writer[Message]
+  implicit def messageReader: BSONDocumentReader[Message] = Macros.reader[Message]
+  implicit def dialogReader: BSONDocumentReader[Dialog] = DialogReader
 
   def saveMessage(message: Message) = {
     messages.flatMap(_.insert(message).map(_ => {}))
@@ -32,9 +33,9 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
     messages.flatMap(_.find(document("to" -> to, "from" -> from)).cursor[Message]().collect[List]())
   }
    // db.messages.aggregate([{$match:{from:"kite"}}, {$group:{_id:{from:"$from", to:"$to"}, last_msg:{$last:"$text"}}}])
-  /*def loadLastMessages(user: String) = {
-    //messages.flatMap(_.aggregate(document("$group" -> document("_id" -> document(), "last_msg" -> document()))))
-    messages.flatMap(_ => perform(_, user))
+  def loadLastMessages(user: String) = {
+    messages.map(_ => perform(_, user))
+
     def perform(col: BSONCollection, from: String) = {
       import col.BatchCommands.AggregationFramework.{
         AggregationResult, Group, Match, LastField
@@ -42,8 +43,8 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
 
       col.aggregate(
         Match(document("from" -> from)),
-        List(Group(document("from" -> "$from", "to" -> "$to"))("last_msg" -> LastField("$text")))
-      ).map(_.head[])
+        List(Group(document("from" -> "$from", "to" -> "$to"))("lastMsg" -> LastField("$text")))
+      ).map(_.head[Dialog])
     }
-  }*/
+  }
 }
