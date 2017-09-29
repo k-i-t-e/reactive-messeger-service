@@ -15,10 +15,10 @@ class ChatRoom extends Actor{
   override def receive: Receive = {
     case msg: Join =>
       subscribers += sender()
-      broadcast(Message(msg.name, msg.name + " has joined the chat"))
+      broadcast(Message(msg.name, msg.name + " has joined the chat", Option.empty))
     case msg: Leave =>
       subscribers -= sender()
-      broadcast(Message(msg.name, msg.name + " has left the chat"))
+      broadcast(Message(msg.name, msg.name + " has left the chat", Option.empty))
     case msg: Message => subscribers.filter(_ != sender()).foreach(_ ! msg)
   }
 

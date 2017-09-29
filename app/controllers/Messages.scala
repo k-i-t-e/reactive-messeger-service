@@ -18,15 +18,15 @@ import play.api.libs.functional.syntax._
 class Messages @Inject() (messageManager: MessageManager) extends Controller {
 
   implicit val messageReads: Reads[Message] = (
-    (JsPath \ "sender").read[String] and
+    (JsPath \ "from").read[String] and
       (JsPath \ "text").read[String] and
-      (JsPath \ "address").read[String]
+      (JsPath \ "to").readNullable[String]
     )(Message.apply _)
 
   implicit val messageWrites: Writes[Message] = (
-    (JsPath \ "sender").write[String] and
+    (JsPath \ "from").write[String] and
       (JsPath \ "text").write[String] and
-      (JsPath \ "address").write[String]
+      (JsPath \ "to").writeNullable[String]
     )(unlift(Message.unapply))
 
   def submit = Action.async(BodyParsers.parse.json) { request =>
@@ -38,14 +38,16 @@ class Messages @Inject() (messageManager: MessageManager) extends Controller {
   }
 
   def get() = Action.async {
-    implicit request => Future(Ok(Json.toJson(messageManager.getMessages())))
+    for {
+      messages <- messageManager.getMessages()
+    } yield Ok(Json.toJson(messages))
   }
 
   def getPrivate(sender: String, address: String) = Action.async {
-    implicit request => Future(Ok(Json.toJson(messageManager.getPrivateMessages(sender, address))))
+    implicit request => messageManager.getPrivateMessages(sender, address).flatMap(list => Future(Ok(Json.toJson(list))));
   }
 
-  def getLast(user: String) = Action.async {
+  /*def getLast(user: String) = Action.async {
     implicit request => Future(Ok(Json.toJson(messageManager.getLastMessages(user))))
-  }
+  }*/
 }

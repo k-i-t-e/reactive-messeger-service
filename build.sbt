@@ -6,13 +6,19 @@ lazy val `playlesson` = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.7"
 
-val reactiveMongoVer = "0.11.14"
+val reactiveMongoVer = "0.12"
 
-libraryDependencies ++= Seq( jdbc , cache , ws   , specs2 % Test,
-  javaJpa, filters,
-  "org.hibernate" % "hibernate-entitymanager" % "5.1.0.Final")
+libraryDependencies ++= Seq(
+  jdbc,
+  cache,
+  ws,
+  specs2 % Test,
+  filters,
+  "org.reactivemongo" %% "play2-reactivemongo" % "0.12.6-play25"
+)
+// javaJpa, "org.hibernate" % "hibernate-entitymanager" % "5.1.0.Final"
 
-libraryDependencies += "org.postgresql" % "postgresql" % "42.1.1"
+// libraryDependencies += "org.postgresql" % "postgresql" % "42.1.1"
 
 unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )  
 

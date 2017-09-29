@@ -22,15 +22,15 @@ class UserActor(out: ActorRef, chatRoom: ActorRef, persistActor: ActorRef, name:
       val res: JsResult[IncomingMessage] = msg.validate(UserActor.messageReads)
       val message = res.get
 
-      if (message.address != null) {
-        context.actorSelection("akka://application/user/" + message.address) ! Message(name, message.text, message.address)
-        log.info("Transfer message to " + message.address)
+      if (message.to != null) {
+        context.actorSelection("akka://application/user/" + message.to) ! Message(name, message.text, Option(message.to))
+        log.info("Transfer message to " + message.to)
       } else {
-        chatRoom ! Message(name, message.text)
+        chatRoom ! Message(name, message.text, Option.empty)
         log.info("Transfer message to chatroom")
       }
 
-      persistActor ! Message(name, message.text, message.address)
+      persistActor ! Message(name, message.text, Option(message.to))
     case msg: Message => out ! msg
   }
 
