@@ -43,8 +43,8 @@ object UserActor {
     Props(new UserActor(out, chatRoom, persistActor, name))
 
   implicit val messageReads: Reads[IncomingMessage] = (
-    (JsPath \ "sender").read[String] and
+    (JsPath \ "from").read[String] and
       (JsPath \ "text").read[String] and
-      (JsPath \ "address").readNullable[String]
+      (JsPath \ "to").readNullable[String]
     )((a, b, c) => IncomingMessage.apply(a, b, if (c.isDefined) c.get else null))
 }

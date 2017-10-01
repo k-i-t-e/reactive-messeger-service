@@ -3,13 +3,15 @@ package controllers
 import javax.inject.Inject
 
 import manager.MessageManager
-import model.Message
+import model.{Dialog, Message}
 import play.api.mvc.{Action, BodyParsers, Controller}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsPath, Json, Reads, Writes}
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, ExecutionContext, Future}
 import play.api.libs.functional.syntax._
+
+import scala.concurrent.duration.Duration
 
 
 /**
@@ -29,6 +31,12 @@ class Messages @Inject() (messageManager: MessageManager) extends Controller {
       (JsPath \ "to").writeNullable[String]
     )(unlift(Message.unapply))
 
+  implicit val dialogWrites: Writes[Dialog] = (
+    (JsPath \ "from").write[String] and
+      (JsPath \ "to").write[String] and
+      (JsPath \ "text").writeNullable[String]
+    )(unlift(Dialog.unapply))
+
   def submit = Action.async(BodyParsers.parse.json) { request =>
     val res = request.body.validate[Message]
     Future(res.fold(
@@ -47,7 +55,9 @@ class Messages @Inject() (messageManager: MessageManager) extends Controller {
     implicit request => messageManager.getPrivateMessages(sender, address).flatMap(list => Future(Ok(Json.toJson(list))));
   }
 
-  /*def getLast(user: String) = Action.async {
-    implicit request => Future(Ok(Json.toJson(messageManager.getLastMessages(user))))
-  }*/
+  def getLast(user: String) = Action.async {
+    implicit request => {
+      Future(Ok(Json.toJson(List[Dialog](Dialog("", "", Option(""))))))
+    };
+  }
 }
