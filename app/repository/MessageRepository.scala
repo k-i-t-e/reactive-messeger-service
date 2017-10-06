@@ -16,11 +16,13 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
   val db = reactiveMongoApi.database
+
   def messages = db.map(_.collection[BSONCollection]("messages"))
-  def plainMessages = reactiveMongoApi.db.collection[BSONCollection]("messages")
 
   implicit def messageWriter: BSONDocumentWriter[Message] = Macros.writer[Message]
+
   implicit def messageReader: BSONDocumentReader[Message] = Macros.reader[Message]
+
   implicit object DialogReader extends BSONDocumentReader[Dialog] {
     override def read(bson: BSONDocument): Dialog = {
       val dialog: Option[Dialog] = for {
@@ -40,22 +42,60 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
   }
 
   def loadGlobalMessages() = {
-      messages.flatMap(_.find(document("to" -> BSONNull)).cursor[Message]().collect[List](-1, false))
+    messages.flatMap(_.find(document("to" -> BSONNull)).cursor[Message]().collect[List](-1, false))
   }
 
   def loadPrivateMessages(from: String, to: String) = {
-    messages.flatMap(_.find(document("to" -> to, "from" -> from)).cursor[Message]().collect[List]())
+    messages.flatMap(_.find(document("$or" -> List(document("to" -> to, "from" -> from), document("to" -> from, "from" -> to)))).cursor[Message]().collect[List]())
   }
-   // db.messages.aggregate([{$match:{from:"kite",  to: {$not: {$eq: null}}}}, {$group:{_id:{from:"$from", to:"$to"}, last_msg:{$last:"$text"}}}])
+
+  // db.messages.aggregate([
+  //   {
+  //     $match:{
+  //       $or: [{from: "kite"}, {to:"kite"}],
+  //       to: {$not: {$eq: null}}
+  //     }
+  //   },
+  //   {
+  //     $group:{
+  //       _id:{from:"$from", to:"$to"},
+  //       last_msg:{$last:"$text"}
+  //     }
+  //   }
+  // ])
+  /*
+  db.messages.aggregate([
+     {
+       $match:{
+         $or: [{from: "kite"}, {to:"kite"}],
+         to: {$not: {$eq: null}}
+       }
+     },
+	 {
+		$project : {
+			from: 1,
+			to: 1,
+			text:1,
+			"groupId" : {"$cond" : [{"$gt" : ['$from', '$to']}, {big : "$from", small : "$to"}, {big : "$to", small : "$from"}]}
+		}
+	},
+     {
+       $group:{
+         _id:"$groupId",
+         last_msg:{$last:"$text"}
+       }
+     }
+   ])
+   */
   def loadLastMessages(user: String): Future[List[Dialog]] = {
-    def perform(col: BSONCollection, from: String) = {
+    def perform(col: BSONCollection, userName: String) = {
       import col.BatchCommands.AggregationFramework.{
-      AggregationResult, Group, Match, LastField
+        Group, Match, LastField, Project
       }
 
       col.aggregate(
         Match(document(
-          "from" -> from,
+          "$or" -> List(document("from" -> userName), document("to" -> userName)),
           "to" -> document(
             "$not" -> document(
               "$eq" -> BSONNull

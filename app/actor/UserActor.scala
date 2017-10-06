@@ -2,17 +2,17 @@ package actor
 
 import akka.actor.{Actor, ActorRef, Props}
 import akka.event.Logging
+import manager.MessageManager
 import model.{IncomingMessage, Message}
 import play.api.libs.json.{JsResult, JsValue, Reads}
-
-import play.api.libs.json._ // JSON library
-import play.api.libs.json.Reads._ // Custom validation helpers
+import play.api.libs.json._
+import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._ // Combinator syntax
 
 /**
   * Created by Mikhail_Miroliubov on 6/2/2017.
   */
-class UserActor(out: ActorRef, chatRoom: ActorRef, persistActor: ActorRef, name: String) extends Actor {
+class UserActor(out: ActorRef, chatRoom: ActorRef, name: String, manager: MessageManager) extends Actor {
   val log = Logging(context.system, this)
   chatRoom ! Join(name)
   log.info("ACTOR PATH:" + self.path)
@@ -30,7 +30,7 @@ class UserActor(out: ActorRef, chatRoom: ActorRef, persistActor: ActorRef, name:
         log.info("Transfer message to chatroom")
       }
 
-      persistActor ! Message(name, message.text, Option(message.to))
+      manager.saveMessage(Message(name, message.text, Option(message.to)))
     case msg: Message => out ! msg
   }
 
@@ -39,8 +39,8 @@ class UserActor(out: ActorRef, chatRoom: ActorRef, persistActor: ActorRef, name:
 }
 
 object UserActor {
-  def props(out: ActorRef, chatRoom: ActorRef, persistActor: ActorRef, name: String) =
-    Props(new UserActor(out, chatRoom, persistActor, name))
+  def props(out: ActorRef, chatRoom: ActorRef, name: String, manager: MessageManager) =
+    Props(new UserActor(out, chatRoom, name, manager))
 
   implicit val messageReads: Reads[IncomingMessage] = (
     (JsPath \ "from").read[String] and
