@@ -17,6 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
   val db = reactiveMongoApi.database
   def messages = db.map(_.collection[BSONCollection]("messages"))
+  def plainMessages = reactiveMongoApi.db.collection[BSONCollection]("messages")
 
   implicit def messageWriter: BSONDocumentWriter[Message] = Macros.writer[Message]
   implicit def messageReader: BSONDocumentReader[Message] = Macros.reader[Message]
@@ -45,19 +46,26 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
   def loadPrivateMessages(from: String, to: String) = {
     messages.flatMap(_.find(document("to" -> to, "from" -> from)).cursor[Message]().collect[List]())
   }
-   // db.messages.aggregate([{$match:{from:"kite"}}, {$group:{_id:{from:"$from", to:"$to"}, last_msg:{$last:"$text"}}}])
-  def loadLastMessages(user: String) = {
-    messages.flatMap(perform(_, user))
-
+   // db.messages.aggregate([{$match:{from:"kite",  to: {$not: {$eq: null}}}}, {$group:{_id:{from:"$from", to:"$to"}, last_msg:{$last:"$text"}}}])
+  def loadLastMessages(user: String): Future[List[Dialog]] = {
     def perform(col: BSONCollection, from: String) = {
       import col.BatchCommands.AggregationFramework.{
-        AggregationResult, Group, Match, LastField
+      AggregationResult, Group, Match, LastField
       }
 
       col.aggregate(
-        Match(document("from" -> from)),
-        List(Group(document("from" -> "$from", "to" -> "$to"))("lastMsg" -> LastField("$text")))
-      ).map(r => r.result[Dialog])
+        Match(document(
+          "from" -> from,
+          "to" -> document(
+            "$not" -> document(
+              "$eq" -> BSONNull
+            )
+          ))
+        ),
+        List(Group(document("from" -> "$from", "to" -> "$to"))("lastMsg" -> LastField("text")))
+      ).map(_.result[Dialog])
     }
+
+    messages.flatMap(perform(_, user))
   }
 }

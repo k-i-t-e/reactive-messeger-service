@@ -57,7 +57,7 @@ class Messages @Inject() (messageManager: MessageManager) extends Controller {
 
   def getLast(user: String) = Action.async {
     implicit request => {
-      Future(Ok(Json.toJson(List[Dialog](Dialog("", "", Option(""))))))
+      messageManager.getLastMessages(user).flatMap(list => Future(Ok(Json.toJson(list))))
     };
   }
 }

@@ -17,9 +17,8 @@ class MessageManager @Inject() (repository: MessageRepository) {
   def getPrivateMessages(sender: String, addres: String): Future[List[Message]] =
     repository.loadPrivateMessages(sender, addres)
 
-  def getLastMessages(user: String) = {
-    val l = repository.loadLastMessages(user)
-    l
+  def getLastMessages(user: String): Future[List[Dialog]] = {
+    repository.loadLastMessages(user)
   }
 
   def saveMessage(message: Message): Message =  {
