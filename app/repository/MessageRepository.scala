@@ -26,8 +26,8 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
   implicit object DialogReader extends BSONDocumentReader[Dialog] {
     override def read(bson: BSONDocument): Dialog = {
       val dialog: Option[Dialog] = for {
-        from <- bson.getAs[BSONDocument]("_id").get.getAs[String]("from")
-        to <- bson.getAs[BSONDocument]("_id").get.getAs[String]("to")
+        from <- bson.getAs[BSONDocument]("_id").get.getAs[String]("big")
+        to <- bson.getAs[BSONDocument]("_id").get.getAs[String]("small")
         lastMsg <- bson.getAs[String]("lastMsg").orElse(null)
       } yield Dialog(from, to, if (lastMsg != null) Option(lastMsg) else Option.empty)
 
@@ -82,7 +82,7 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
      {
        $group:{
          _id:"$groupId",
-         last_msg:{$last:"$text"}
+         lastMsg:{$last:"$text"}
        }
      }
    ])
@@ -102,7 +102,21 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
             )
           ))
         ),
-        List(Group(document("from" -> "$from", "to" -> "$to"))("lastMsg" -> LastField("text")))
+        List(
+          Project(document(
+            "from" -> 1,
+            "to" -> 1,
+            "text" -> 1,
+            "groupId" -> document(
+              "$cond" -> List(
+                document("$gt" -> List("$from", "$to")),
+                document("big" -> "$from", "small" -> "$to"),
+                document("big" -> "$to", "small" -> "$from")
+              )
+            )
+          )),
+          Group(BSONString("$groupId"))("lastMsg" -> LastField("text"))
+        )
       ).map(_.result[Dialog])
     }
 
