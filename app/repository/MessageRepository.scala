@@ -4,11 +4,12 @@ import javax.inject.{Inject, Singleton}
 
 import model.{Dialog, Message}
 import reactivemongo.api.collections.bson.BSONCollection
-import reactivemongo.bson.{BSONDocument, BSONDocumentReader, BSONDocumentWriter, BSONNull, BSONString, Macros, document}
+import reactivemongo.bson.{BSONDocument, BSONDocumentReader, BSONDocumentWriter, BSONNull, BSONString, BSONValue, Macros, document}
 import play.modules.reactivemongo.ReactiveMongoApi
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 /**
   * Created by Mikhail_Miroliubov on 6/2/2017.
@@ -25,13 +26,10 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
 
   implicit object DialogReader extends BSONDocumentReader[Dialog] {
     override def read(bson: BSONDocument): Dialog = {
-      val dialog: Option[Dialog] = for {
-        from <- bson.getAs[BSONDocument]("_id").get.getAs[String]("big")
-        to <- bson.getAs[BSONDocument]("_id").get.getAs[String]("small")
-        lastMsg <- bson.getAs[String]("lastMsg").orElse(null)
-      } yield Dialog(from, to, if (lastMsg != null) Option(lastMsg) else Option.empty)
-
-      dialog.get
+      val from = bson.getAs[BSONDocument]("_id").get.getAsTry[String]("big").get
+      val to = bson.getAs[BSONDocument]("_id").get.getAsTry[String]("small").get
+      val lastMsg = bson.getAs[String]("lastMsg")
+      Dialog(from, to, lastMsg)
     }
   }
 
