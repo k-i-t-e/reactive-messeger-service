@@ -1,4 +1,4 @@
-name := "playlesson"
+name := "reactive-messenger"
 
 version := "1.0"
 
