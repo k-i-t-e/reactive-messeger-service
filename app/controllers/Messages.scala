@@ -1,5 +1,6 @@
 package controllers
 
+import java.util.Date
 import javax.inject.Inject
 
 import manager.MessageManager
@@ -18,17 +19,11 @@ import scala.concurrent.duration.Duration
   * Created by Mikhail_Miroliubov on 5/29/2017.
   */
 class Messages @Inject() (messageManager: MessageManager) extends Controller {
-
-  implicit val messageReads: Reads[Message] = (
-    (JsPath \ "from").read[String] and
-      (JsPath \ "text").read[String] and
-      (JsPath \ "to").readNullable[String]
-    )(Message.apply _)
-
   implicit val messageWrites: Writes[Message] = (
     (JsPath \ "from").write[String] and
       (JsPath \ "text").write[String] and
-      (JsPath \ "to").writeNullable[String]
+      (JsPath \ "to").writeNullable[String] and
+      (JsPath \ "date").write[Date]
     )(unlift(Message.unapply))
 
   implicit val dialogWrites: Writes[Dialog] = (
@@ -36,14 +31,6 @@ class Messages @Inject() (messageManager: MessageManager) extends Controller {
       (JsPath \ "to").write[String] and
       (JsPath \ "text").writeNullable[String]
     )(unlift(Dialog.unapply))
-
-  def submit = Action.async(BodyParsers.parse.json) { request =>
-    val res = request.body.validate[Message]
-    Future(res.fold(
-      errors => BadRequest("Invalid message format"),
-      message => Ok(Json.toJson(messageManager.saveMessage(message)))
-    ))
-  }
 
   def get() = Action.async {
     for {

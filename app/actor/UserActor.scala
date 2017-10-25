@@ -1,5 +1,7 @@
 package actor
 
+import java.util.Date
+
 import akka.actor.{Actor, ActorRef, Props}
 import akka.event.Logging
 import manager.MessageManager
@@ -20,17 +22,19 @@ class UserActor(out: ActorRef, chatRoom: ActorRef, name: String, manager: Messag
   override def receive: Receive = {
     case msg: JsValue =>
       val res: JsResult[IncomingMessage] = msg.validate(UserActor.messageReads)
-      val message = res.get
+      val incomingMessage = res.get
+      val message = Message(name, incomingMessage.text,
+        if (incomingMessage.to != null) Option(incomingMessage.to) else Option.empty, new Date())
 
-      if (message.to != null) {
-        context.actorSelection("akka://application/user/" + message.to) ! Message(name, message.text, Option(message.to))
-        log.info("Transfer message to " + message.to)
+      if (incomingMessage.to != null) {
+        context.actorSelection("akka://application/user/" + incomingMessage.to) ! message
+        log.info("Transfer message to " + incomingMessage.to)
       } else {
-        chatRoom ! Message(name, message.text, Option.empty)
+        chatRoom ! message
         log.info("Transfer message to chatroom")
       }
 
-      manager.saveMessage(Message(name, message.text, Option(message.to)))
+      manager.saveMessage(message)
     case msg: Message => out ! msg
   }
 
