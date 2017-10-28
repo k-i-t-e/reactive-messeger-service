@@ -17,10 +17,10 @@ class ChatRoom extends Actor{ // TODO: remove - get rid of global chat
   override def receive: Receive = {
     case msg: Join =>
       subscribers += sender()
-      broadcast(Message(msg.name, msg.name + " has joined the chat", Option.empty, new Date()))
+      broadcast(Message(msg.name, msg.name + " has joined the chat", Option.empty, new Date(), true, true))
     case msg: Leave =>
       subscribers -= sender()
-      broadcast(Message(msg.name, msg.name + " has left the chat", Option.empty, new Date()))
+      broadcast(Message(msg.name, msg.name + " has left the chat", Option.empty, new Date(), true, true))
     case msg: Message => subscribers.filter(_ != sender()).foreach(_ ! msg)
   }
 

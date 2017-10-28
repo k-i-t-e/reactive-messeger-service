@@ -24,7 +24,7 @@ class UserActor(out: ActorRef, chatRoom: ActorRef, name: String, manager: Messag
       val res: JsResult[IncomingMessage] = msg.validate(UserActor.messageReads)
       val incomingMessage = res.get
       val message = Message(name, incomingMessage.text,
-        if (incomingMessage.to != null) Option(incomingMessage.to) else Option.empty, new Date())
+        if (incomingMessage.to != null) Option(incomingMessage.to) else Option.empty, new Date(), false, false)
 
       if (incomingMessage.to != null) {
         context.actorSelection("akka://application/user/" + incomingMessage.to) ! message

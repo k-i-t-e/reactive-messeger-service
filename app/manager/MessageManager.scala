@@ -2,7 +2,7 @@ package manager
 
 import javax.inject.{Inject, Singleton}
 
-import model.{Dialog, Message}
+import model.{Acknowledgement, Dialog, Message}
 import repository.MessageRepository
 
 import scala.concurrent.Future
@@ -24,5 +24,13 @@ class MessageManager @Inject() (repository: MessageRepository) {
   def saveMessage(message: Message): Message =  {
     repository.saveMessage(message)
     message
+  }
+
+  def updateMessageStatus(ack: Acknowledgement) = {
+    repository.updateMessageStatus(ack)
+  }
+
+  def updateMessagesStatusBatch (ack: Acknowledgement) = {
+    repository.updateMessagesStatusBatch(ack)
   }
 }

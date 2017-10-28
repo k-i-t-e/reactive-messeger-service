@@ -2,7 +2,7 @@ package repository
 
 import javax.inject.{Inject, Singleton}
 
-import model.{Dialog, Message}
+import model.{Acknowledgement, Dialog, Message}
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.bson.{BSONDocument, BSONDocumentReader, BSONDocumentWriter, BSONNull, BSONString, Macros, document}
 import play.modules.reactivemongo.ReactiveMongoApi
@@ -44,6 +44,24 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
 
   def loadPrivateMessages(from: String, to: String) = {
     messages.flatMap(_.find(document("$or" -> List(document("to" -> to, "from" -> from), document("to" -> from, "from" -> to)))).cursor[Message]().collect[List]())
+  }
+
+  def updateMessageStatus(ack: Acknowledgement) = {
+    val update =
+      (if (ack.received.isDefined) document("recieved" -> ack.received.get) else document()) ++
+      (if (ack.viewed.isDefined) document("viewed" -> ack.viewed.get) else document())
+
+    messages.flatMap(
+      _.update(document("from" -> ack.from, "to" -> ack.to, "date" -> ack.timestamp), update).map(_ => {}))
+  }
+
+  def updateMessagesStatusBatch(ack: Acknowledgement) = {
+    val update =
+      (if (ack.received.isDefined) document("recieved" -> ack.received.get) else document()) ++
+        (if (ack.viewed.isDefined) document("viewed" -> ack.viewed.get) else document())
+
+    messages.flatMap(
+      _.update(document("from" -> ack.from, "to" -> ack.to, "date" -> document("$lte" -> ack.timestamp)), update, multi = true))
   }
 
   // db.messages.aggregate([
