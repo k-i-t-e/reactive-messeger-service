@@ -15,6 +15,8 @@ import scala.concurrent.Future
   */
 @Singleton
 class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
+  private val RECEIVED = "received"
+
   val db = reactiveMongoApi.database
 
   def messages = db.map(_.collection[BSONCollection]("messages"))
@@ -48,7 +50,7 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
 
   def updateMessageStatus(ack: Acknowledgement) = {
     val update =
-      (if (ack.received.isDefined) document("recieved" -> ack.received.get) else document()) ++
+      (if (ack.received.isDefined) document(RECEIVED -> ack.received.get) else document()) merge
       (if (ack.viewed.isDefined) document("viewed" -> ack.viewed.get) else document())
 
     messages.flatMap(
@@ -57,7 +59,7 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
 
   def updateMessagesStatusBatch(ack: Acknowledgement) = {
     val update =
-      (if (ack.received.isDefined) document("recieved" -> ack.received.get) else document()) ++
+      (if (ack.received.isDefined) document(RECEIVED -> ack.received.get) else document()) merge
         (if (ack.viewed.isDefined) document("viewed" -> ack.viewed.get) else document())
 
     messages.flatMap(
