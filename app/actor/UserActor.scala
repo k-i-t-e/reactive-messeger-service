@@ -14,9 +14,8 @@ import play.api.libs.functional.syntax._ // Combinator syntax
 /**
   * Created by Mikhail_Miroliubov on 6/2/2017.
   */
-class UserActor(out: ActorRef, chatRoom: ActorRef, name: String, manager: MessageManager) extends Actor {
+class UserActor(out: ActorRef, name: String, manager: MessageManager) extends Actor {
   val log = Logging(context.system, this)
-  chatRoom ! Join(name)
   log.info("ACTOR PATH:" + self.path)
 
   override def receive: Receive = {
@@ -30,21 +29,17 @@ class UserActor(out: ActorRef, chatRoom: ActorRef, name: String, manager: Messag
         context.actorSelection("akka://application/user/" + incomingMessage.to) ! message
         log.info("Transfer message to " + incomingMessage.to)
       } else {
-        chatRoom ! message
         log.info("Transfer message to chatroom")
       }
 
       manager.saveMessage(message)
     case msg: Message => out ! msg
   }
-
-  override def postStop() = chatRoom ! Leave(name)
-
 }
 
 object UserActor {
-  def props(out: ActorRef, chatRoom: ActorRef, name: String, manager: MessageManager) =
-    Props(new UserActor(out, chatRoom, name, manager))
+  def props(out: ActorRef, name: String, manager: MessageManager) =
+    Props(new UserActor(out, name, manager))
 
   implicit val messageReads: Reads[IncomingMessage] = (
     (JsPath \ "from").read[String] and

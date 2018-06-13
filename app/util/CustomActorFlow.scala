@@ -8,8 +8,10 @@ import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
   * Created by Mikhail_Miroliubov on 7/4/2017.
   */
 object CustomActorFlow {
-  def actorRef[In, Out](props: ActorRef => Props, bufferSize: Int = 16, overflowStrategy: OverflowStrategy = OverflowStrategy.dropNew, maybeName: Option[String] = None)
-                       (implicit factory: ActorRefFactory, mat: Materializer): Flow[In, Out, _] = {
+  def actorRef[In, Out](props: ActorRef => Props,
+                        bufferSize: Int = 16,
+                        overflowStrategy: OverflowStrategy = OverflowStrategy.dropNew,
+                        maybeName: Option[String] = None)(implicit factory: ActorRefFactory, mat: Materializer): Flow[In, Out, _] = {
 
     val (outActor, publisher) = Source.actorRef[Out](bufferSize, overflowStrategy)
       .toMat(Sink.asPublisher(false))(Keep.both).run()
