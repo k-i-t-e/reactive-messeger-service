@@ -2,11 +2,15 @@ name := "reactive-messenger"
 
 version := "1.0"
 
-lazy val `playlesson` = (project in file(".")).enablePlugins(PlayScala)
+lazy val `reactive_messenger` = (project in file(".")).enablePlugins(PlayScala)
+
+resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
+resolvers += "Akka Snapshot Repository" at "http://repo.akka.io/snapshots/"
+resolvers += Resolver.jcenterRepo
 
 scalaVersion := "2.11.7"
 
-val reactiveMongoVer = "0.12"
+val reactiveMongoVer = "0.13.0-play26"
 
 libraryDependencies ++= Seq(
   jdbc,
@@ -14,14 +18,26 @@ libraryDependencies ++= Seq(
   ws,
   specs2 % Test,
   filters,
-  "org.reactivemongo" %% "play2-reactivemongo" % "0.12.6-play25"
+  "org.reactivemongo" %% "play2-reactivemongo" % reactiveMongoVer,
+  guice
 )
-// javaJpa, "org.hibernate" % "hibernate-entitymanager" % "5.1.0.Final"
 
-// libraryDependencies += "org.postgresql" % "postgresql" % "42.1.1"
+libraryDependencies += "net.codingwell" %% "scala-guice" % "4.1.0"
+
+libraryDependencies += "com.iheart" %% "ficus" % "1.4.3" // config lib, used by Silhouette,
+
+// Silhouette config
+val silhouetteVer = "5.0.0"
+lazy val silhouetteLib = Seq(
+  "com.mohiva" %% "play-silhouette" % silhouetteVer,
+  "com.mohiva" %% "play-silhouette-password-bcrypt" % silhouetteVer,
+  "com.mohiva" %% "play-silhouette-crypto-jca" % silhouetteVer,
+  "com.mohiva" %% "play-silhouette-persistence" % silhouetteVer,
+  "com.mohiva" %% "play-silhouette-testkit" % silhouetteVer % "test"
+)
+
+libraryDependencies ++= silhouetteLib
 
 unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )  
-
-resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 
 PlayKeys.externalizeResources := false

@@ -47,12 +47,12 @@ class Messages @Inject() (messageManager: MessageManager) extends Controller {
   }
 
   def getPrivate(sender: String, address: String) = Action.async {
-    implicit request => messageManager.getPrivateMessages(sender, address).flatMap(list => Future(Ok(Json.toJson(list))));
+    implicit request => messageManager.getPrivateMessages(sender, address).map(list => Ok(Json.toJson(list)));
   }
 
   def getLast(user: String) = Action.async {
     implicit request => {
-      messageManager.getLastMessages(user).flatMap(list => Future(Ok(Json.toJson(list))))
+      messageManager.getLastMessages(user).map(list => Ok(Json.toJson(list)))
     };
   }
 
