@@ -5,7 +5,8 @@ import java.util.Date
 import akka.actor.{Actor, ActorRef, Props}
 import akka.event.Logging
 import manager.MessageManager
-import model.{IncomingMessage, Message}
+import model.MessageType.MessageType
+import model.{IncomingMessage, Message, MessageType}
 import play.api.libs.json.{JsResult, JsValue, Reads}
 import play.api.libs.json._
 import play.api.libs.json.Reads._
@@ -41,9 +42,13 @@ object UserActor {
   def props(out: ActorRef, name: String, manager: MessageManager) =
     Props(new UserActor(out, name, manager))
 
+  implicit val messageTypeReads: Reads[MessageType] = Reads.enumNameReads(MessageType)
+  implicit val messageTypeWrites: Writes[MessageType] = Writes.enumNameWrites
+
   implicit val messageReads: Reads[IncomingMessage] = (
     (JsPath \ "from").read[String] and
       (JsPath \ "text").read[String] and
-      (JsPath \ "to").readNullable[String]
-    )((a, b, c) => IncomingMessage.apply(a, b, if (c.isDefined) c.get else null))
+      (JsPath \ "to").readNullable[String] and
+      (JsPath \ "type").read[MessageType]
+    )((a, b, c, t) => IncomingMessage.apply(a, b, if (c.isDefined) c.get else null, t))
 }

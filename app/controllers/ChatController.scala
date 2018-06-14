@@ -6,17 +6,20 @@ import actor.UserActor
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import manager.MessageManager
-import model.{IncomingMessage, Message}
-import play.api.libs.json.{JsValue, Json}
+import actor.UserActor._
+import model.{IncomingMessage, Message, MessageType}
+import play.api.libs.json._
 import play.api.mvc.WebSocket.MessageFlowTransformer
 import play.api.mvc.{AbstractController, ControllerComponents, WebSocket}
-import util.CustomActorFlow
+import _root_.util.CustomActorFlow
 
 /**
   * Created by Mikhail_Miroliubov on 5/29/2017.
   */
 class ChatController @Inject()(cc: ControllerComponents, manager: MessageManager)
                               (implicit system: ActorSystem, materializer: Materializer) extends AbstractController(cc) {
+  implicit val messageTypeFormat = Format(messageTypeReads, messageTypeWrites)
+
   implicit val inEventFormat = Json.format[IncomingMessage]
   implicit val outEventFormat = Json.format[Message]
   implicit val messageFlowTransformer = MessageFlowTransformer.jsonMessageFlowTransformer[JsValue, Message]
