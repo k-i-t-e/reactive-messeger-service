@@ -1,7 +1,8 @@
 package repository
 
-import javax.inject.{Inject, Singleton}
+import java.util.Date
 
+import javax.inject.{Inject, Singleton}
 import model.{Acknowledgement, Dialog, Message}
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.bson.{BSONDocument, BSONDocumentReader, BSONDocumentWriter, BSONNull, BSONString, Macros, document}
@@ -30,7 +31,8 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
       val from = bson.getAs[BSONDocument]("_id").get.getAsTry[String]("big").get
       val to = bson.getAs[BSONDocument]("_id").get.getAsTry[String]("small").get
       val lastMsg = bson.getAs[String]("lastMsg")
-      Dialog(from, to, lastMsg)
+      val date = bson.getAs[Date]("date").get
+      Dialog(from, to, lastMsg, date)
     }
   }
 
@@ -38,10 +40,6 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
 
   def saveMessage(message: Message) = {
     messages.flatMap(_.insert(message).map(_ => {}))
-  }
-
-  def loadGlobalMessages() = {
-    messages.flatMap(_.find(document("to" -> BSONNull)).cursor[Message]().collect[List](-1, false))
   }
 
   def loadPrivateMessages(from: String, to: String) = {
@@ -66,20 +64,6 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
       _.update(document("from" -> ack.from, "to" -> ack.to, "date" -> document("$lte" -> ack.timestamp)), update, multi = true))
   }
 
-  // db.messages.aggregate([
-  //   {
-  //     $match:{
-  //       $or: [{from: "kite"}, {to:"kite"}],
-  //       to: {$not: {$eq: null}}
-  //     }
-  //   },
-  //   {
-  //     $group:{
-  //       _id:{from:"$from", to:"$to"},
-  //       last_msg:{$last:"$text"}
-  //     }
-  //   }
-  // ])
   /*
   db.messages.aggregate([
      {
@@ -93,18 +77,20 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
 			from: 1,
 			to: 1,
 			text:1,
+			date:1,
 			"groupId" : {"$cond" : [{"$gt" : ['$from', '$to']}, {big : "$from", small : "$to"}, {big : "$to", small : "$from"}]}
 		}
 	},
      {
        $group:{
          _id:"$groupId",
-         lastMsg:{$last:"$text"}
+         lastMsg:{$last:"$text"},
+         date: {$last:"$date"}
        }
      }
    ])
    */
-  def loadLastMessages(user: String): Future[List[Dialog]] = {
+  def loadLastMessages(user: String): Future[Seq[Dialog]] = {
     def perform(col: BSONCollection, userName: String) = {
       import col.BatchCommands.AggregationFramework.{
         Group, Match, LastField, Project
@@ -124,6 +110,7 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
             "from" -> 1,
             "to" -> 1,
             "text" -> 1,
+            "date" -> 1,
             "groupId" -> document(
               "$cond" -> List(
                 document("$gt" -> List("$from", "$to")),
@@ -132,7 +119,7 @@ class MessageRepository @Inject() (val reactiveMongoApi: ReactiveMongoApi) {
               )
             )
           )),
-          Group(BSONString("$groupId"))("lastMsg" -> LastField("text"))
+          Group(BSONString("$groupId"))("lastMsg" -> LastField("text"), "date" -> LastField("date"))
         )
       ).map(_.result[Dialog])
     }

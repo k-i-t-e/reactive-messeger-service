@@ -12,12 +12,10 @@ import scala.concurrent.Future
   */
 @Singleton
 class MessageManager @Inject() (repository: MessageRepository) {
-  def getMessages(): Future[List[Message]] = repository.loadGlobalMessages()
-
   def getPrivateMessages(sender: String, addres: String): Future[List[Message]] =
     repository.loadPrivateMessages(sender, addres)
 
-  def getLastMessages(user: String): Future[List[Dialog]] = {
+  def getDialogs(user: String): Future[Seq[Dialog]] = {
     repository.loadLastMessages(user)
   }
 

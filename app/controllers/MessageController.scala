@@ -1,22 +1,24 @@
 package controllers
 
 import java.util.Date
+
+import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-
 import manager.MessageManager
-import model.{Acknowledgement, Dialog, Message}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import model.{Acknowledgement, Dialog, Message, RestResult}
 import play.api.libs.functional.syntax._
-
 import play.api.libs.json.{JsPath, Json, Reads, Writes}
-import play.api.mvc.{Action, BodyParsers, Controller}
+import play.api.mvc._
+import security.DefaultEnv
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * Created by Mikhail_Miroliubov on 5/29/2017.
   */
-class Messages @Inject() (messageManager: MessageManager) extends Controller {
+class MessageController @Inject()(cc: ControllerComponents,
+                                  messageManager: MessageManager,
+                                  silhouette: Silhouette[DefaultEnv])(implicit ec: ExecutionContext) extends AbstractController(cc) {
   implicit val messageWrites: Writes[Message] = (
     (JsPath \ "from").write[String] and
       (JsPath \ "text").write[String] and
@@ -29,7 +31,8 @@ class Messages @Inject() (messageManager: MessageManager) extends Controller {
   implicit val dialogWrites: Writes[Dialog] = (
     (JsPath \ "from").write[String] and
       (JsPath \ "to").write[String] and
-      (JsPath \ "text").writeNullable[String]
+      (JsPath \ "text").writeNullable[String] and
+        (JsPath \ "date").write[Date]
     )(unlift(Dialog.unapply))
 
   implicit val acknowledgementReads: Reads[Acknowledgement] = (
@@ -40,19 +43,15 @@ class Messages @Inject() (messageManager: MessageManager) extends Controller {
       (JsPath \ "viewed").readNullable[Boolean]
     )((from, to, timestamp, received, viewed) => Acknowledgement(from, to, timestamp, received, viewed))
 
-  def get() = Action.async {
-    for {
-      messages <- messageManager.getMessages()
-    } yield Ok(Json.toJson(messages))
+  implicit val resultDialogReads: Writes[RestResult[Seq[Dialog]]] = Json.writes[RestResult[Seq[Dialog]]]
+
+  def getPrivate(address: String) = silhouette.SecuredAction.async {
+    request => messageManager.getPrivateMessages(request.identity.userName, address).map(list => Ok(Json.toJson(list)));
   }
 
-  def getPrivate(sender: String, address: String) = Action.async {
-    implicit request => messageManager.getPrivateMessages(sender, address).map(list => Ok(Json.toJson(list)));
-  }
-
-  def getLast(user: String) = Action.async {
-    implicit request => {
-      messageManager.getLastMessages(user).map(list => Ok(Json.toJson(list)))
+  def getDialogs() = silhouette.SecuredAction.async {
+    request => {
+      messageManager.getDialogs(request.identity.userName).map(dialogs => Ok(Json.toJson(RestResult(dialogs))))
     };
   }
 

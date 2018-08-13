@@ -32,4 +32,5 @@ case class IncomingMessage(from: String,
 
 case class Dialog(from: String,
                   to: String,
-                  lastMessage: Option[String])
+                  lastMessage: Option[String],
+                  date: Date)

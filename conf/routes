@@ -6,10 +6,9 @@
 GET     /                           controllers.Application.index
 
 # Messages
-GET      /api/messages/             controllers.Messages.get()
-GET      /api/chats/:user        controllers.Messages.getLast(user: String)
-GET      /api/messages/:sender/:address          controllers.Messages.getPrivate(sender: String, address: String)
-POST    /api/messages/updateStatus controllers.Messages.updateMessagesStatus
+GET      /api/dialogs/        controllers.MessageController.getDialogs
+GET      /api/messages/:address          controllers.MessageController.getPrivate(address: String)
+POST    /api/messages/updateStatus controllers.MessageController.updateMessagesStatus
 
 # Chats
 GET    /api/chat/:name             controllers.ChatController.join(name: String)
